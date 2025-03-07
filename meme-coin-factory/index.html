@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚀 Meme Coin Factory</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #7c3aed;
+            --secondary: #ff6b6b;
+            --background: #1a1a1a;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: var(--background);
+            color: white;
+            margin: 0;
+            padding: 2rem;
+            min-height: 100vh;
+            background-image: linear-gradient(to bottom right, #2d2d2d 0%, #1a1a1a 100%);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .header img {
+            width: 150px;
+            margin-bottom: 1rem;
+            filter: drop-shadow(0 0 10px var(--primary));
+        }
+
+        .creation-form {
+            background: rgba(255,255,255,0.1);
+            padding: 2rem;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            margin-bottom: 3rem;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        input {
+            padding: 1rem;
+            border: 2px solid var(--primary);
+            border-radius: 10px;
+            background: rgba(255,255,255,0.05);
+            color: white;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--secondary);
+            box-shadow: 0 0 15px var(--secondary);
+        }
+
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px var(--primary);
+        }
+
+        .marketplace {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .coin-card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+            padding: 1.5rem;
+            transition: transform 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .coin-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .coin-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, var(--primary), transparent);
+            animation: shine 3s infinite;
+        }
+
+        @keyframes shine {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .coin-image {
+            width: 100%;
+            height: 200px;
+            border-radius: 10px;
+            object-fit: cover;
+            margin-bottom: 1rem;
+        }
+
+        .live-feed {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: rgba(0,0,0,0.8);
+            padding: 1rem;
+            border-radius: 10px;
+            max-width: 300px;
+            backdrop-filter: blur(10px);
+        }
+
+        .notification {
+            background: var(--secondary);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            margin-bottom: 0.5rem;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="https://cdn-icons-png.flaticon.com/512/6001/6001430.png" alt="Meme Coin Logo">
+            <h1>Create Your Viral Meme Coin! 🚀</h1>
+        </div>
+
+        <div class="creation-form">
+            <div class="form-grid">
+                <input type="text" id="coinName" placeholder="Coin Name (e.g., DogeMarsRocket)">
+                <input type="text" id="coinSymbol" placeholder="Symbol (e.g., DMR)">
+                <input type="number" id="totalSupply" placeholder="Total Supply (e.g., 1000000)">
+                <input type="url" id="coinImage" placeholder="Image URL (optional)">
+            </div>
+            <button onclick="createCoin()">LAUNCH COIN! 🚀</button>
+        </div>
+
+        <h2>🔥 Live Marketplace (Real-Time)</h2>
+        <div id="marketplace" class="marketplace"></div>
+
+        <div class="live-feed">
+            <h3>🔄 Live Feed <span id="notificationCount">0</span></h3>
+            <div id="liveNotifications"></div>
+        </div>
+    </div>
+
+    <script>
+        const eventSource = new EventSource('/stream');
+        const liveFeed = document.getElementById('liveNotifications');
+        let notificationCount = 0;
+
+        // Handle real-time updates
+        eventSource.onmessage = (event) => {
+            const coin = JSON.parse(event.data);
+            
+            // Update notification counter
+            notificationCount++;
+            document.getElementById('notificationCount').textContent = notificationCount;
+
+            // Add to live feed
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.innerHTML = `
+                🚀 New coin: <strong>${coin.name}</strong> (${coin.symbol}) 
+                <br>${new Date(coin.created_at).toLocaleTimeString()}
+            `;
+            liveFeed.prepend(notification);
+            
+            // Update marketplace
+            addCoinToMarketplace(coin);
+        };
+
+        async function createCoin() {
+            const coinData = {
+                name: document.getElementById('coinName').value,
+                symbol: document.getElementById('coinSymbol').value.toUpperCase(),
+                supply: document.getElementById('totalSupply').value,
+                image: document.getElementById('coinImage').value || 'https://source.unsplash.com/random/800x600/?meme,crypto'
+            };
+
+            const response = await fetch('/create-coin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(coinData)
+            });
+
+            if(response.ok) {
+                document.getElementById('coinName').value = '';
+                document.getElementById('coinSymbol').value = '';
+                document.getElementById('totalSupply').value = '';
+                document.getElementById('coinImage').value = '';
+            }
+        }
+
+        function addCoinToMarketplace(coin) {
+            const marketplace = document.getElementById('marketplace');
+            
+            const coinCard = document.createElement('div');
+            coinCard.className = 'coin-card';
+            coinCard.innerHTML = `
+                <img src="${coin.image}" class="coin-image" alt="${coin.name}">
+                <h3>${coin.name} (${coin.symbol})</h3>
+                <p>💰 Supply: ${Number(coin.supply).toLocaleString()}</p>
+                <p>⏰ Created: ${new Date(coin.created_at).toLocaleTimeString()}</p>
+            `;
+            
+            marketplace.prepend(coinCard);
+        }
+    </script>
+</body>
+</html>
